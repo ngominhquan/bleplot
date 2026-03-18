@@ -10,3 +10,6 @@ venv/
 
 # Reference source (not part of bleplot)
 BetterSerialPlotter-main/
+
+# Local development notes
+CLAUDE.md
