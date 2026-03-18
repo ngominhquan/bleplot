@@ -77,11 +77,17 @@ class Plot:
             ):
                 dpg.add_plot_legend()
                 dpg.add_plot_axis(dpg.mvXAxis, label="Time [s]",
-                                  tag=self._xaxis_tag)
+                                  tag=self._xaxis_tag,
+                                  payload_type="DND_PLOT",
+                                  drop_callback=self._on_drop_x)
                 dpg.add_plot_axis(dpg.mvYAxis, label="Y1",
-                                  tag=self._yaxis0_tag)
+                                  tag=self._yaxis0_tag,
+                                  payload_type="DND_PLOT",
+                                  drop_callback=self._on_drop_y0)
                 dpg.add_plot_axis(dpg.mvYAxis, label="Y2",
-                                  tag=self._yaxis1_tag)
+                                  tag=self._yaxis1_tag,
+                                  payload_type="DND_PLOT",
+                                  drop_callback=self._on_drop_y1)
 
             # Resize handle button
             dpg.add_button(
@@ -92,9 +98,9 @@ class Plot:
                 small=True,
             )
 
-        # Register this plot as a drag-drop target (main area → Y1)
-        dpg.set_item_drop_callback(self._tag, self._on_drop_main)
-        dpg.set_item_payload_type(self._tag, "DND_PLOT")
+        # Main plot area → Y1 (axes already have drop targets set in their constructors)
+        dpg.configure_item(self._tag, payload_type="DND_PLOT",
+                           drop_callback=self._on_drop_main)
 
         self._built = True
 
@@ -128,14 +134,27 @@ class Plot:
     # ------------------------------------------------------------------
 
     def _ensure_series(self, ident: int, info: DataInfo) -> None:
-        if ident in self._series_tags:
-            return
-        tag   = f"series_{self._tag}_{ident}"
-        y_tag = (self._yaxis0_tag
-                 if self.variable_axes.get(ident, 0) == 0
-                 else self._yaxis1_tag)
-        dpg.add_line_series([], [], label=info.name, parent=y_tag, tag=tag)
+        desired_axis = self.variable_axes.get(ident, 0)
+        y_tag = self._yaxis0_tag if desired_axis == 0 else self._yaxis1_tag
 
+        # If series exists but is on the wrong axis, delete it so it gets recreated
+        if ident in self._series_tags:
+            tag = self._series_tags[ident]
+            if dpg.does_item_exist(tag):
+                parent = dpg.get_item_parent(tag)
+                if parent != dpg.get_alias_id(y_tag) and parent != y_tag:
+                    dpg.delete_item(tag)
+                    theme = self._series_themes.pop(ident, None)
+                    if theme and dpg.does_item_exist(theme):
+                        dpg.delete_item(theme)
+                    del self._series_tags[ident]
+                else:
+                    return
+            else:
+                del self._series_tags[ident]
+
+        tag   = f"series_{self._tag}_{ident}"
+        dpg.add_line_series([], [], label=info.name, parent=y_tag, tag=tag)
         theme = self._make_series_theme(info.color)
         dpg.bind_item_theme(tag, theme)
         self._series_tags[ident]   = tag
@@ -332,6 +351,25 @@ class Plot:
             ident = app_data.get("ident")
             if ident is not None:
                 self._add_var(ident, 0)
+
+    def _on_drop_y0(self, sender, app_data) -> None:
+        if isinstance(app_data, dict):
+            ident = app_data.get("ident")
+            if ident is not None:
+                self._add_var(ident, 0)
+
+    def _on_drop_y1(self, sender, app_data) -> None:
+        if isinstance(app_data, dict):
+            ident = app_data.get("ident")
+            if ident is not None:
+                self._add_var(ident, 1)
+
+    def _on_drop_x(self, sender, app_data) -> None:
+        if isinstance(app_data, dict):
+            ident = app_data.get("ident")
+            if ident is not None:
+                self.other_x_axis = True
+                self.x_axis_id = ident
 
     # ------------------------------------------------------------------
     # Variable add/remove

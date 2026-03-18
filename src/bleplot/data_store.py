@@ -103,6 +103,10 @@ class DataStore:
         with self._lock:
             self.print_buffer.append(line)
 
+    def clear_raw_lines(self) -> None:
+        with self._lock:
+            self.print_buffer.clear()
+
     # ------------------------------------------------------------------
     # Reader side (render thread)
     # ------------------------------------------------------------------

@@ -113,6 +113,12 @@ class PlotMonitor:
 
         self._toolbar_built = True
 
+    def clear_all_variables(self) -> None:
+        """Remove all variable assignments from every plot (called on new connect)."""
+        for plot in self.plots:
+            for ident in list(plot.variable_axes.keys()):
+                plot._remove_var(ident)
+
     def _add_plot(self, parent: str | int) -> None:
         self._plot_counter += 1
         p = Plot(name=f"Plot {self._plot_counter}", plot_index=len(self.plots))
@@ -195,7 +201,7 @@ class PlotMonitor:
         tag = "export_file_dialog"
         if dpg.does_item_exist(tag):
             dpg.delete_item(tag)
-        dpg.add_file_dialog(
+        with dpg.file_dialog(
             tag=tag,
             label="Export CSV",
             default_filename="data.csv",
@@ -204,7 +210,9 @@ class PlotMonitor:
             modal=True,
             width=600,
             height=400,
-        )
+        ):
+            dpg.add_file_extension(".csv", color=(0, 255, 0, 255))
+            dpg.add_file_extension(".*")
 
     def _export_csv(self, path: str) -> None:
         if not path:
@@ -243,22 +251,38 @@ class PlotMonitor:
         tag = "save_cfg_dialog"
         if dpg.does_item_exist(tag):
             dpg.delete_item(tag)
-        dpg.add_file_dialog(
+        with dpg.file_dialog(
             tag=tag,
             label="Save Config",
-            default_filename="bsp_config.json",
-            callback=lambda s, a: save_config(a.get("file_path_name", ""), state),
+            default_filename="bleplot_config.json",
+            callback=lambda s, a: self._do_save(a.get("file_path_name", ""), state),
             cancel_callback=lambda: None,
             modal=True,
             width=600,
             height=400,
-        )
+        ):
+            dpg.add_file_extension(".json", color=(0, 255, 0, 255))
+            dpg.add_file_extension(".*")
+
+    def _do_save(self, path: str, state: "AppState") -> None:
+        from bleplot.serialization import save_config
+        from pathlib import Path
+
+        if not path:
+            return
+        p = Path(path)
+        if p.suffix.lower() != ".json":
+            p = p.with_suffix(".json")
+        try:
+            save_config(p, state)
+        except Exception as exc:
+            print(f"[BLEPlot] Config save failed: {exc}")
 
     def _open_load_dialog(self, state: "AppState") -> None:
         tag = "load_cfg_dialog"
         if dpg.does_item_exist(tag):
             dpg.delete_item(tag)
-        dpg.add_file_dialog(
+        with dpg.file_dialog(
             tag=tag,
             label="Load Config",
             callback=lambda s, a: self._do_load(a.get("file_path_name", ""), state),
@@ -266,7 +290,9 @@ class PlotMonitor:
             modal=True,
             width=600,
             height=400,
-        )
+        ):
+            dpg.add_file_extension(".json", color=(0, 255, 0, 255))
+            dpg.add_file_extension(".*")
 
     def _do_load(self, path: str, state: "AppState") -> None:
         from bleplot.serialization import load_config, apply_config

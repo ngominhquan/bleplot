@@ -54,7 +54,6 @@ def load_config(path: str | Path) -> dict[str, Any]:
 
 def apply_config(state: "AppState", doc: dict[str, Any]) -> None:
     """Apply a loaded config dict to the live AppState."""
-    from bleplot.ui.plot_monitor import PlotMonitor
     from bleplot.ui.plot import Plot
 
     # Restore variable names / colors
@@ -68,22 +67,32 @@ def apply_config(state: "AppState", doc: dict[str, Any]) -> None:
     state.last_device_address = ble_doc.get("device_address", "")
     state.last_device_name = ble_doc.get("device_name", "")
 
-    # Restore plots
-    state.plot_monitor.plots.clear()
+    # Destroy existing DPG plot widgets, then clear the list
+    pm = state.plot_monitor
+    for p in pm.plots:
+        p.destroy()
+    pm.plots.clear()
+
+    # Rebuild plots: create Plot objects, restore state, then build DPG items
+    plots_parent = pm._plots_parent
     for i, plot_doc in enumerate(doc.get("plots", [])):
-        p = Plot(name=plot_doc.get("name", f"Plot {i + 1}"),
-                 plot_index=i)
-        p.height = float(plot_doc.get("height", 300))
-        p.time_frame = float(plot_doc.get("time_frame", 10.0))
-        p.autoscale = bool(plot_doc.get("autoscale", True))
-        p.other_x_axis = bool(plot_doc.get("other_x_axis", False))
-        p.x_axis_id = plot_doc.get("x_axis_id", None)
+        p = Plot(name=plot_doc.get("name", f"Plot {i + 1}"), plot_index=i)
+        p.height        = float(plot_doc.get("height", 300))
+        p.time_frame    = float(plot_doc.get("time_frame", 10.0))
+        p.autoscale     = bool(plot_doc.get("autoscale", True))
+        p.other_x_axis  = bool(plot_doc.get("other_x_axis", False))
+        p.x_axis_id     = plot_doc.get("x_axis_id", None)
         p.x_axis_realtime = bool(plot_doc.get("x_axis_realtime", True))
         for var_doc in plot_doc.get("variables", []):
             p.variable_axes[int(var_doc["id"])] = int(var_doc["y_axis"])
-        state.plot_monitor.plots.append(p)
+        p.build(plots_parent)   # create DPG items
+        pm.plots.append(p)
 
-    if not state.plot_monitor.plots:
-        state.plot_monitor.plots.append(
-            Plot(name="Plot 1", plot_index=0)
-        )
+    # Ensure at least one plot exists
+    if not pm.plots:
+        p = Plot(name="Plot 1", plot_index=0)
+        p.build(plots_parent)
+        pm.plots.append(p)
+
+    # Keep counter in sync so next "+ Plot" gets the right number
+    pm._plot_counter = len(pm.plots)

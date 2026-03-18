@@ -183,7 +183,10 @@ class BLEPlotApp:
             "plot_toolbar_grp", _TAG_PLOT_AREA,
             self.state, self._data_snap, self._info_snap, self._program_time,
         )
-        self._ble_monitor.rebuild(_TAG_MONITOR_GRP, self._lines_snap)
+        self._ble_monitor.rebuild(
+            _TAG_MONITOR_GRP, self._lines_snap,
+            on_clear=self._data_store.clear_raw_lines,
+        )
 
     # ------------------------------------------------------------------
     # BLE control bar
@@ -289,6 +292,7 @@ class BLEPlotApp:
         self.state.last_device_address = device.address
         self.state.last_device_name    = device.name or ""
         self._data_store.reset()
+        self._plot_monitor.clear_all_variables()
         self._line_acc   = ""
         self._skip_first = True
         self._start_time = time.monotonic()

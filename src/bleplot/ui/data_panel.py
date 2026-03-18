@@ -29,6 +29,10 @@ class DataPanel:
         info_snap: dict[int, DataInfo],
         data_flowing: bool,
     ) -> None:
+        # Don't tear down while user is dragging — would destroy the drag_payload source
+        if dpg.is_mouse_button_down(dpg.mvMouseButton_Left):
+            return
+
         dpg.delete_item(parent_tag, children_only=True)
 
         dpg.add_text("INCOMING DATA", parent=parent_tag)
