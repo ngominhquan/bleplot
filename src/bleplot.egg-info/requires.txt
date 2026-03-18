@@ -1,6 +1,0 @@
-dearpygui>=1.11
-bleak>=0.22
-
-[dev]
-pytest
-pytest-asyncio
