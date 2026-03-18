@@ -13,3 +13,7 @@ BetterSerialPlotter-main/
 
 # Local development notes
 CLAUDE.md
+
+# Config/data files generated during testing
+*.json
+*.csv
