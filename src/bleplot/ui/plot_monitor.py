@@ -118,6 +118,8 @@ class PlotMonitor:
         for plot in self.plots:
             for ident in list(plot.variable_axes.keys()):
                 plot._remove_var(ident)
+            plot.other_x_axis = False
+            plot.x_axis_id    = None
 
     def _add_plot(self, parent: str | int) -> None:
         self._plot_counter += 1
