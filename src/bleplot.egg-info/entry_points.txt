@@ -1,0 +1,2 @@
+[console_scripts]
+bleplot = bleplot.main:main

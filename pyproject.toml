@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bleplot"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Real-time BLE data plotter — Python port of BetterSerialPlotter"
+dependencies = [
+    "dearpygui>=1.11",
+    "bleak>=0.22",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
+
+[project.scripts]
+bleplot = "bleplot.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
