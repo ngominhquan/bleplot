@@ -3,10 +3,13 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 *.egg
-dist/
-build/
 .venv/
 venv/
+
+# PyInstaller build output
+dist/
+build/
+*.spec
 
 # Reference source (not part of bleplot)
 BetterSerialPlotter-main/
