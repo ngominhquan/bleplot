@@ -191,6 +191,11 @@ class Plot:
                 continue
 
             if self.paused:
+                # Variable added after freeze — snapshot it now
+                if ident not in self._paused_snap:
+                    sd = data_snap.get(ident)
+                    if sd:
+                        self._paused_snap[ident] = (sd.xs(), sd.ys())
                 xs, ys = self._paused_snap.get(ident, ([], []))
             else:
                 sd = data_snap[ident]
